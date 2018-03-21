@@ -1,0 +1,32 @@
+.include "m8def.inc"
+
+  rjmp init
+
+.org ACIaddr	;адрес прерывания ACIaddr по аналоговому компаратору		
+  rjmp COMP_INT
+
+init:
+ ldi r16,LOW(RamEnd)
+ out SPL,r16
+ ldi r16,HIGH(RamEnd)
+ out SPH,r16
+ 
+ ldi r16,0b00000100	;делаем PD0 выходом
+ out DDRD,r16	
+ ;Чтобы компаратор заработал его выводы нужно подключить на вход (DDR=0) и отключить подтяжку до единицы (PORT=0).
+ ldi r16, (0<<PD6|0<<PD7)
+ out PORTD, r16
+	
+ldi r16, (1<<ACIE|0<<ACIS1|0<<ACIS0); разр.прерывания компаратора при перключении и определеяем событие срабатывания
+out ACSR, r16
+
+sei	;устанавливаем флаг прерываний (разрешаем)
+
+ main_loop:
+ nop	;пинаем балду
+ rjmp main_loop
+
+COMP_INT:	;что делать по прерыванию
+sbis ACSR, ACO ; если бит ACO = 1, то установка LED
+sbi PORTD,2; включаем LED
+reti
