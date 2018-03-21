@@ -1,0 +1,26 @@
+.include "m8def.inc"
+  rjmp init
+.org 0x0001	;адрес прерывания по INT0
+  rjmp BUT_INT
+init:
+ ldi R16,LOW(RamEnd)
+ out SPL,R16
+ ldi R16,HIGH(RamEnd)
+ out SPH,R16
+ldi R17,0b00000001	;делаем PD0 выходом
+ out DDRD,R17	
+ ldi R17, 0b00000100 ; для втоpoго разряда порта D
+ out PORTD, R17 ;подтягивающий резистор
+ ldi R17, (1<<INT0) ;разрешаем прерывание на INT0 
+ out GIMSK, R17 
+ ldi R17, (0<<ISC00|0<<ISC01) ;прерывание по 0 на INT0 
+ out MCUCR,R17
+ sei	;устанавливаем флаг прерываний (разрешаем)
+ main_loop:
+ nop	;пинаем балду
+ rjmp main_loop
+BUT_INT:	;что делать по прерыванию
+ out PORTD,R16
+ ldi R17, 1
+ EOR R16, R17
+reti
