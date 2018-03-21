@@ -1,0 +1,37 @@
+#include <mega8.h>
+
+#asm
+.equ __lcd_port = 0x18
+#endasm
+
+#include <lcd.h>
+#include <stdio.h>
+#include <delay.h>
+
+char string_LCD[20];
+
+ 
+void main(void)
+{
+unsigned int code_symbol;
+
+lcd_init(16);
+
+while (1)
+      {
+      for (code_symbol = 0x00; code_symbol <= 255; code_symbol++){
+      lcd_clear();
+      
+      sprintf(string_LCD, "Code: 0x%02x", code_symbol);
+      lcd_puts(string_LCD);
+      lcd_gotoxy(0,1);
+      lcd_putsf("Symbol:");
+      lcd_gotoxy(7,1);
+     
+      lcd_putchar(code_symbol);
+      
+      delay_ms(1000);
+      };
+      code_symbol = 0x00;
+      };
+}
