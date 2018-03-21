@@ -1,0 +1,30 @@
+.include "m8def.inc"
+; Variable Declarations
+.def tempH   = r16                      ; присваиваем регистру R16 имя tempH
+.def tempL   = r17                      ; присваиваем регистру R17 имя tempL
+.dseg                                   ; сегмент ОЗУ
+.eseg                                   ; сегмент ЕЕПРОМ
+.cseg                                   ; сегмент программы
+.org 0
+ 
+PROG:           ldi r16,$04             ; Инициализируем стек
+                out SPH,r16
+                ldi r16,$5F
+                out SPL,r16
+
+                ldi tempH,$00    ; Заносим значение $00E0 в регистр OCR1A 
+                out OCR1AH,tempH
+                ldi tempL,$E0           ;
+                out OCR1AL,tempL
+                ldi tempH,$00      ; Заносим значение $0010 в регистр  OCR1A  
+                out OCR1BH,tempH
+                ldi tempL,$E0           ;
+                out OCR1BL,tempL 
+                ldi tempL,0b10100011           ; инициализация таймер/счетчика Т1	//10100001
+                out TCCR1A,tempL
+                ldi tempL,$A1
+                out TCCR1B,tempL
+                sbi DDRB,1 ; подключаем вывод PB1 к таймер/счетчику Т1
+                sbi DDRB,2 ; подключаем вывод PB2 к таймер/счетчику Т1
+ 
+end:            rjmp end                ; пустой цикл
