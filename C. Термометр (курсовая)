@@ -1,0 +1,44 @@
+#asm
+.equ __w1_port = 0x1b   
+.equ __w1_bit = 6       
+.equ __lcd_port = 0x15  
+#endasm
+
+#include <lcd.h>
+#include <ds1820.h>
+#include <delay.h>
+#include <math.h>
+#include <stdio.h>
+
+char lcd_buffer[33];
+
+unsigned char rom_code[1][9];
+
+void main(void)
+{
+unsigned char therm_online;
+int temp;
+lcd_init(16);
+lcd_clear();
+
+while(1){
+therm_online = w1_search(0xf0, rom_code);
+
+while(!therm_online){
+lcd_clear();
+lcd_putsf("Error.\nCheck thermode!");
+delay_ms(2000);
+therm_online = w1_search(0xf0, rom_code);
+}
+
+while (therm_online)
+    {
+        temp=ds1820_temperature_10(&rom_code[0][0]);
+        sprintf(lcd_buffer, "t=%u.%u\xdfC", temp/10, temp%10); 
+        lcd_clear();
+        lcd_puts(lcd_buffer);
+        delay_ms(500);
+        therm_online = w1_search(0xf0, rom_code);
+    }
+}
+}
