@@ -1,7 +1,7 @@
 #asm
-.equ __w1_port = 0x12   //portD
-.equ __w1_bit = 1       //portD bit 1
-.equ __lcd_port = 0x18  //portB
+.equ __w1_port = 0x1b   
+.equ __w1_bit = 6       
+.equ __lcd_port = 0x15  
 #endasm
 
 #include <lcd.h>
@@ -51,7 +51,7 @@ while (1)
     {
      for (i=0;i<devices;){
         temp=ds1820_temperature_10(&rom_code[i][0]);
-        sprintf(lcd_buffer, "t%u=i.%u\xdfC", ++i, temp/10, abs(temp%10));    // abs не работает, спросить
+        sprintf(lcd_buffer, "t%u=%u.%u\xdfC", ++i, temp/10, temp%10);    // abs не работает, спросить    abs(temp%10)
         lcd_clear();
         lcd_puts(lcd_buffer);
         delay_ms(800);
