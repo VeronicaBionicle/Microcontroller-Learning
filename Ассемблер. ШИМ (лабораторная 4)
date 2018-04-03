@@ -12,18 +12,20 @@ PROG:           ldi r16,$04             ; Инициализируем стек
                 ldi r16,$5F
                 out SPL,r16
 
-                ldi tempH,$00    ; Заносим значение $00E0 в регистр OCR1A 
+                ldi tempH,$00    ; Заносим значение 16 в регистр OCR1A	16*2*0.25 мкс = 8 мкс
                 out OCR1AH,tempH
-                ldi tempL,$E0           ;
+                ldi tempL,$10           ;
                 out OCR1AL,tempL
-                ldi tempH,$00      ; Заносим значение $0010 в регистр  OCR1A  
+
+                ldi tempH,$00      ; Заносим значение 253 в регистр  OCR1В	253*2*0,25 = 126,5 мкс
                 out OCR1BH,tempH
-                ldi tempL,$E0           ;
+                ldi tempL,$FD           ;
                 out OCR1BL,tempL 
-                ldi tempL,0b10100011           ; инициализация таймер/счетчика Т1	//10100001
-                out TCCR1A,tempL
-                ldi tempL,$A1
-                out TCCR1B,tempL
+
+                ldi tempL,$A1           ; инициализация таймер/счетчика Т1 bin 10100001
+                out TCCR1A,tempL	;Phase Correct PWM 8 бит, счетчик без предделителя, захват после четвертой одинаковой выборки сигнала захвата (от помех) 
+                out TCCR1B,tempL	;сохранение TCNT1 в OCR1 будет по спадающему фронту сигнала, OC1A/B сбрасывается в 0 при прямом счете (TCNT1 = OCR1A/B), в 1 при обратном
+
                 sbi DDRB,1 ; подключаем вывод PB1 к таймер/счетчику Т1
                 sbi DDRB,2 ; подключаем вывод PB2 к таймер/счетчику Т1
  
