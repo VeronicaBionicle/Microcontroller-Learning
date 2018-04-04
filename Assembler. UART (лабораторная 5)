@@ -1,0 +1,40 @@
+.device ATmega8
+.include "m8def.inc"
+; Internal Hardware Init  ======================================
+		.equ 	XTAL = 8000000 	
+		.equ 	baudrate = 9600  
+		.equ 	bauddivider = XTAL/(16*baudrate)-1
+uart_init:	
+; вводим в регистр UBRR число bauddivider, от которого  зависит скорость работы
+		LDI 	R16, low(bauddivider)
+		OUT 	UBRRL,R16	
+		LDI 	R16, high(bauddivider)
+		OUT 	UBRRH,R16
+; очищаем UCSRA — Регистр контроля и статуса UART
+		LDI 	R16,0
+		OUT 	UCSRA, R16
+; Прерывания запрещены, прием-передача разрешен.
+		LDI R16,(1<<RXEN)|(1<<TXEN)|(0<<RXCIE)|(0<<TXCIE)|(0<<UDRIE)
+		OUT 	UCSRB, R16	
+ 
+; Формат кадра - 8 бит, пишем в регистр UCSRC, за это отвечает бит селектор
+		LDI 	R16, (1<<URSEL)|(1<<UCSZ0)|(1<<UCSZ1)
+		OUT 	UCSRC, R16
+
+; Процедура отправки байта
+uart_snt:
+		SBIS 	UCSRA, UDRE	; Пропуск если нет флага готовности
+		RJMP	uart_snt 	; ждем готовности - флага UDRE
+
+		ldi R16, 'U' ; наше число
+		OUT	UDR, R16	; шлем байт
+
+		Nop
+		Nop
+		Nop
+		Nop
+		Nop
+		Nop
+		Nop
+
+		RET			; Возврат
