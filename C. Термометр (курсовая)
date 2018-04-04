@@ -34,7 +34,7 @@ therm_online = w1_search(0xf0, rom_code);
 while (therm_online)
     {
         temp=ds1820_temperature_10(&rom_code[0][0]);
-        sprintf(lcd_buffer, "t=%u.%u\xdfC", temp/10, temp%10); 
+        sprintf(lcd_buffer, "t=%u.%u \xdf\x43", temp/10, temp%10); 
         lcd_clear();
         lcd_puts(lcd_buffer);
         delay_ms(500);
