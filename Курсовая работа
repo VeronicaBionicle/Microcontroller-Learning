@@ -1,0 +1,68 @@
+#asm
+.equ __i2c_port=0x1b ;port A
+.equ __scl_bit=0 ;SCL=STK500 port A pin 1
+.equ __sda_bit=1 ;SDA=STK500 port A pin
+
+.equ __w1_port = 0x18 //порт В   
+.equ __w1_bit = 6       
+.equ __lcd_port = 0x15  
+#endasm
+
+#include <i2c.h>
+#include <stdio.h>
+#include <90s8515.h>
+#include <delay.h>
+#include <math.h>
+#include <lcd.h>
+#include <ds1820.h>
+
+char lcd_buffer[33];
+
+unsigned char rom_code[1][9];
+
+void main(void)
+{
+unsigned char therm_online;
+
+char sign;
+int temp;
+lcd_init(16);
+lcd_clear();
+
+UCR=8;     //разрешим передатчик
+UBRR=23;    //скорость передачи = 9600 при частоте 3.6864 МГц
+//инициализация шины i2c
+i2c_init();
+
+//цикл передачи температуры
+while (1)
+    {
+    
+    therm_online = w1_search(0xf0, rom_code);
+
+while(!therm_online){
+lcd_clear();
+lcd_putsf("Error.\nCheck thermode!");
+printf("Error.\nCheck thermode!\r\n"); 
+delay_ms(2000);
+therm_online = w1_search(0xf0, rom_code);
+}
+
+while (therm_online)
+    {
+        temp=ds1820_temperature_10(&rom_code[0][0]);
+         sign='+';
+    if (temp<0)
+    {
+    sign='-';
+    temp = -temp;
+    };
+        sprintf(lcd_buffer, "t=%c %u.%u \xdf\x43",sign, temp/10, temp%10);
+         printf("t=%c%u.%u \xf8\x43\r\n",sign,temp/10, temp%10); 
+        lcd_clear();
+        lcd_puts(lcd_buffer);
+        delay_ms(500);
+        therm_online = w1_search(0xf0, rom_code);
+    }
+}
+}
