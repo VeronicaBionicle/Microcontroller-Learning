@@ -1,0 +1,68 @@
+#asm
+.equ __i2c_port=0x1b ;порт A
+.equ __scl_bit=0 ;SCL=STK500 порт A pin 0
+.equ __sda_bit=1 ;SDA=STK500 порт A pin 1
+
+.equ __w1_port = 0x18 ;порт В   
+.equ __w1_bit = 6   ;pin 6
+.equ __lcd_port = 0x15  ;порт С
+#endasm
+
+#include <i2c.h>
+#include <stdio.h>
+#include <90s8515.h>
+#include <delay.h>
+#include <math.h>
+#include <lcd.h>
+#include <ds1820.h>
+
+char lcd_buffer[33];    //буфер данных дисплея
+unsigned char rom_code[1][9];   //rom-код датчика
+unsigned char therm_online;
+char signt;
+int temper;
+
+void init(void){    //функция инициализации
+    lcd_init(16);   //инициализация экрана
+    lcd_clear();
+
+    UCR=8;     //разрешение передачи
+    UBRR=23;    //скорость передачи = 9600 при частоте 3.6864 МГц
+
+    i2c_init();  //инициализация шины i2c
+    TCCR1B=(1<<CTC1)|(1<<CS12)|(1<<CS10);//СТС (сброс по совпадению), предделитель 1024
+    TIMSK=(1<<OCIE1A); //разрешения прерывания Timer1 по совпадению с OCR1A
+    OCR1AH=0x0E;           //период 1 секунда при частоте 3,600 kHz
+    OCR1AL=0x0F;
+};
+
+interrupt [TIM1_COMPA] void timer1_compa_isr(void)  //обработчик прерывания
+{
+    therm_online = w1_search(0xf0, rom_code);   //проверка подключения датчика температуры  readrom
+        if (therm_online)
+        {
+            temper=ds1820_temperature_10(&rom_code[0][0]);
+            signt='+';
+            if (temper<0)
+            {
+                signt='-';
+                temper = -temper;
+            };
+            sprintf(lcd_buffer, "t=%c %u.%u \xdf\x43",signt, temper/10, temper%10); 
+            lcd_clear();
+            lcd_puts(lcd_buffer);
+            printf("t=%c%u.%u \xf8\x43\r\n",signt,temper/10, temper%10);
+        }
+        else {
+            lcd_clear();
+            lcd_putsf("Error.\nCheck thermode!");
+            printf("Error.\nCheck thermode!\r\n");     
+        };
+}
+
+void main(void)
+{
+    init();
+    #asm("sei")
+    while (1){};
+}
