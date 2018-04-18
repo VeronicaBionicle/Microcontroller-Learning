@@ -1,0 +1,49 @@
+#include <mega16.h>
+#include <io.h>
+#include <delay.h>
+
+unsigned short int u;
+
+void init(void)
+{
+DDRD = 0xFF;
+PORTD = 0x00;
+ADCSRA |= (1<<ADEN)|(1<<ADPS1)|(1<<ADPS0);
+ADMUX |= (0<<REFS1)|(0<<REFS0);
+}
+
+void main(void)
+{
+init();
+while (1)
+    {
+      ADCSRA |= (1<<ADSC);
+      while ((ADCSRA & (1<<ADIF))==0)
+      {
+      u = (ADCL|ADCH);
+      ADCSRA = (ADCL << 8);
+      switch(u)
+        { 
+        case 128: PORTD = 0b00000001;
+                  break;
+        case 256: PORTD = 0b00000011;
+                  break;          
+        case 384: PORTD = 0b00000111;
+                  break;
+        case 512: PORTD = 0b00001111;
+                  break;
+        case 640: PORTD = 0b00011111;
+                  break;
+        case 768: PORTD = 0b00111111;
+                  break;
+        case 896: PORTD = 0b01111111;
+                  break;
+        case 1020: PORTD = 0b11111111;
+                  break;
+        default: PORTD = 0b00000000;
+                  break;
+        };
+        delay_ms(30);
+      }
+    };
+}
