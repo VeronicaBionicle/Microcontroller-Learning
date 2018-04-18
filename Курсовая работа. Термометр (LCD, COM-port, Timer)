@@ -11,7 +11,6 @@
 #include <i2c.h>
 #include <stdio.h>
 #include <90s8515.h>
-#include <delay.h>
 #include <math.h>
 #include <lcd.h>
 #include <ds1820.h>
