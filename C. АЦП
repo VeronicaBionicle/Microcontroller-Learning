@@ -8,8 +8,8 @@ void init(void)
 {
 DDRD = 0xFF;
 PORTD = 0x00;
-ADCSRA |= (1<<ADEN)|(1<<ADPS1)|(1<<ADPS0);
-ADMUX |= (0<<REFS1)|(0<<REFS0);
+ADCSRA = (1<<ADEN)|(1<<ADPS1)|(1<<ADPS0);
+ADMUX = (0<<REFS1)|(1<<REFS0);
 }
 
 void main(void)
@@ -20,8 +20,8 @@ while (1)
       ADCSRA |= (1<<ADSC);
       while ((ADCSRA & (1<<ADIF))==0)
       {
-      u = (ADCL|ADCH);
-      ADCSRA = (ADCL << 8);
+      u = ((ADCL|ADCH)<<8);
+      //ADCSRA = (ADCH << 8)|(ADCL << 8);
       switch(u)
         { 
         case 128: PORTD = 0b00000001;
