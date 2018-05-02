@@ -1,0 +1,83 @@
+#asm
+    .equ __lcd_port=0x15
+#endasm
+
+#include <lcd.h>
+#include <stdio.h>
+#include <delay.h>
+#include <90s8515.h> 
+
+#define F_XTAL 4000000L
+#define KEYIN PIND
+#define KEYOUT PORTD
+#define INIT_TIMER0 TCNT1=0x100L-F_XTAL/64L/500L
+#define FIRST_COLUMN 0x80
+#define LAST_COLUMN 0x10
+
+typedef unsigned char byte;
+
+unsigned keys;
+char buf[33];
+
+interrupt [TIM0_OVF] void timer0_int (void)
+{
+    static byte key_pressed_counter=20;
+    static byte column=FIRST_COLUMN;
+    static unsigned row_data, crt_key;
+
+    INIT_TIMER0;
+
+    row_data<<=4;
+
+    row_data|=~KEYIN&0xf;
+    column>>=1;
+
+    if (column==(LAST_COLUMN>>1))
+    {
+    column=FIRST_COLUMN;
+        if (--key_pressed_counter==9) crt_key=row_data;
+        else
+        {
+            if (row_data!=crt_key) key_pressed_counter=10;
+            else
+            {
+                if (!key_pressed_counter)
+                {
+                    keys=row_data;
+                    key_pressed_counter=10;
+                };
+            };
+        };
+        row_data=0;
+    };
+    KEYOUT=~column;
+}
+
+void init_keypad(void)
+{
+    DDRD=0xf0;
+    KEYOUT=~FIRST_COLUMN;
+    INIT_TIMER0;
+    TCCR0=3;
+    TIMSK=2;
+    #asm("sei")
+}
+
+void main(void)
+{
+init_keypad();
+lcd_init(16);
+lcd_putsf("CVAVR Keypad");
+
+while (1)
+    {
+        lcd_gotoxy(0,1);
+        if (keys)
+        {
+            sprintf(buf, "Key code=% 04Xh", keys);
+            lcd_puts(buf);
+        }
+        else lcd_putsf("NO KEY        ");
+        delay_ms(500);
+    }
+}
