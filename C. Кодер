@@ -1,26 +1,16 @@
 #include <io.h>
 #include <90s8515.h> 
-
-int x;
-
+#include <stdio.h>
+#include <delay.h>
+int x[13], i, j;
 interrupt [EXT_INT0] void button (void){
-x = PINA.0 + 2*PINA.1 + 4*PINA.2 + 8*PINA.3;
-switch(x){
- case 0: PORTC = 0b00000000; break; // А  код 0000
- case 1: PORTC = 0b00000001; break; // И  код 0001
- case 2: PORTC = 0b00000010; break; // О  код 001.
- case 3: PORTC = 0b00001100; break; // Н  код 11..
- case 4: PORTC = 0b00000100; break; // Р  код 0100
- case 5: PORTC = 0b00000101; break; // В  код 0101 
- case 6: PORTC = 0b00001010; break; // Е  код 101.
- case 7: PORTC = 0b00000110; break; // Ю  код 011.
- case 8: PORTC = 0b00001000; break; // К  код 100.
- default: break;
-};
+x[i] = PINA.0 + 2*PINA.1 + 4*PINA.2 + 8*PINA.3;
+i++; 
 };
 
 void main(void)
 {
+i = 0;
 DDRD.0 = 0;
 PORTD.0 = 1;
 PORTD.2 = 1;
@@ -29,8 +19,32 @@ DDRA = 0b00000000;
 PORTA = 0b00001111; 
 GIFR |= (1<<INT0);
 GIMSK |= (1<<INT0);
-MCUCR |= (0<<ISC01)|(0<<ISC00);
+MCUCR |= (1<<ISC01)|(1<<ISC00);
+UCR=8;     //разрешение передачи
+    UBRR=23;    //скорость передачи = 9600 при частоте 3.6864 МГц
 #asm("sei")
-while (1){}
+while (1){
+      if (i==13){
+      #asm("cli")
+for (j=0;j<=13; j++) {
+switch(x[j]){
+ case 0: printf("0000");  break;     //A 0000
+ case 1: printf("0001"); break;    //И 0001
+ case 2: printf("001"); break;   // О  код 001
+ case 3: printf("11"); break; // Н  код 11 
+ case 4: printf("0100"); break;   // Р  код 0100
+ case 5: printf("0101"); break;  // В  код 0101
+ case 6: printf("101");break; // Е  код 101
+ case 7: printf("011");break;   //Ю код 011
+ case 8: printf("100"); break; // К  код 100
+ default: break;
+};
+delay_ms(50);
+};
+ printf("\r\n");
+i=0;
+}
+#asm("sei")
+}
 }
 
