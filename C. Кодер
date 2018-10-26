@@ -4,12 +4,12 @@
 #include <delay.h>
 #include <string.h>
 
-int x[13], i, j, num;
+int x[13], i, j;
 
 char ex[];
 
 interrupt [EXT_INT0] void button (void){
-    x[i] = PINA.0 + 2*PINA.1 + 4*PINA.2 + 8*PINA.3;
+    x[i] = PINA.0 + 2*PINA.1 + 4*PINA.2 + 8*PINA.3 + 16*PINA.4 + 32*PINA.5 + 64*PINA.6 + 128*PINA.7;
     i++; 
 };
 
@@ -33,26 +33,21 @@ void main(void)
             #asm("cli")
             for (j=0;j<=13; j++) {
                 switch(x[j]){
-                     case 0: strcat(ex,"0000");  break;     //A 0000
-                     case 1: strcat(ex,"0001"); break;    //И 0001
-                     case 2: strcat(ex,"001"); break;   // О  код 001
-                     case 3: strcat(ex,"11"); break; // Н  код 11 
-                     case 4: strcat(ex,"0100"); break;   // Р  код 0100
-                     case 5: strcat(ex,"0101"); break;  // В  код 0101
-                     case 6: strcat(ex,"101");break; // Е  код 101
-                     case 7: strcat(ex,"011");break;   //Ю код 011
-                     case 8: strcat(ex,"100"); break; // К  код 100
+                     case 128: strcat(ex,"0000");  break;     //A 0000
+                     case 136: strcat(ex,"0001"); break;    //И 0001
+                     case 142: strcat(ex,"001"); break;   // О  код 001
+                     case 141: strcat(ex,"11"); break; // Н  код 11 
+                     case 144: strcat(ex,"0100"); break;   // Р  код 0100
+                     case 130: strcat(ex,"0101"); break;  // В  код 0101
+                     case 133: strcat(ex,"101");break; // Е  код 101
+                     case 238: strcat(ex,"011");break;   //Ю код 011
+                     case 138: strcat(ex,"100"); break; // К  код 100
                      default: break;
                     };
 
             };
-            printf("%s",ex);
-            for (j=0; j<=strlen(ex); j++){
-                num = ex[j];
-                PORTC.0 = num;
-                delay_ms(1);
-                }
-
+            printf("%s",ex); 
+            delay_ms(500);
             printf("\r\n");  
             i=0;
             #asm("sei")
