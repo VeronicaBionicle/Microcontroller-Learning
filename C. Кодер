@@ -5,7 +5,7 @@
 #include <string.h>
 
 const int N = 19;
-
+const int Del = 50;
 int x[N], i, j;
 char ex[];
 int receive_end;
@@ -22,9 +22,11 @@ interrupt [EXT_INT0] void button (void){
 void init(){
     i = 0;
     receive_end = 0;
-    PORTD.2 = 1;
-    DDRA = 0b00000000;
-    PORTA = 0b11111111; 
+    DDRD &=~(1<<PORTD2);
+    DDRD |=(1<<PORTD0);
+    PORTD |= (1<<PORTD0)|(1<<PORTD2);
+    DDRA = 0x00;
+    PORTA = 0xFF; 
     GIFR |= (1<<INT0);
     GIMSK |= (1<<INT0);
     MCUCR |= (1<<ISC01)|(1<<ISC00);
@@ -41,15 +43,73 @@ void main(void)
             #asm("cli")
             for (j=0;j<=sizeof(x); j++) {
                 switch(x[j]){
-                     case 128: strcat(ex,"0000");  break;     //A 0000
-                     case 136: strcat(ex,"0001"); break;    //И 0001
-                     case 142: strcat(ex,"001"); break;   // О  код 001
-                     case 141: strcat(ex,"11"); break; // Н  код 11 
-                     case 144: strcat(ex,"0100"); break;   // Р  код 0100
-                     case 130: strcat(ex,"0101"); break;  // В  код 0101
-                     case 133: strcat(ex,"101");break; // Е  код 101
-                     case 238: strcat(ex,"011");break;   //Ю код 011
-                     case 138: strcat(ex,"100"); break; // К  код 100
+                     case 128:    //A 0000
+                         strcat(ex,"0000");
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(4*Del);
+                         break;     
+                     case 136:   //И 0001
+                         strcat(ex,"0001");
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(3*Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         break;    
+                     case 142:    // О  код 001
+                         strcat(ex,"001");
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(2*Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         break;   
+                     case 141: // Н  код 11 
+                         strcat(ex,"11");
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(2*Del);
+                         break; 
+                     case 144: // Р  код 0100
+                         strcat(ex,"0100"); 
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(2*Del);
+                         break;   
+                     case 130:   // В  код 0101
+                         strcat(ex,"0101");
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         break; 
+                     case 133:  // Е  код 101
+                         strcat(ex,"101");
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         break; 
+                     case 238:  //Ю код 011
+                         strcat(ex,"011");
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(2*Del);
+                         break;   
+                     case 138:  //К  код 100
+                         strcat(ex,"100");
+                         PORTD |= (1<<PORTD0);
+                         delay_ms(Del);
+                         PORTD &=~ (1<<PORTD0);
+                         delay_ms(2*Del);
+                         break;  
                      default: break;
                     };
 
