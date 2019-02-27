@@ -1,0 +1,140 @@
+#define F_CPU 8000000UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define e1    PORTD|=0b00001000 // установка линии E в 1
+#define e0    PORTD&=0b11110111 // установка линии E в 0
+#define rs1    PORTD|=0b00000100 // установка линии RS в 1 (данные)
+#define rs0    PORTD&=0b11111011 // установка линии RS в 0 (команда)
+
+int ADC_Port = 0;
+void sendhalfbyte(unsigned char c)
+{
+	c<<=4;
+	e1; //включаем линию Е
+	_delay_us(50);
+	PORTD&=0b00001111; //стираем информацию на входах DB4-DB7, остальное не трогаем
+	PORTD|=c;
+	e0; //выключаем линию Е
+	_delay_us(50);
+}
+//----------------------------------------
+void sendbyte(unsigned char c, unsigned char mode)
+{
+	if (mode==0) rs0;
+	else         rs1;
+	unsigned char hc=0;
+	hc=c>>4;
+	sendhalfbyte(hc); sendhalfbyte(c);
+}
+//----------------------------------------
+void sendcharlcd(unsigned char c)
+{
+	sendbyte(c,1);
+}
+//----------------------------------------
+void setpos(unsigned char x, unsigned y)
+{
+	char adress;
+	adress=(0x40*y+x)|0b10000000;
+	sendbyte(adress, 0);
+}
+//----------------------------------------
+void LCD_ini(void)
+{
+	_delay_ms(15); //Ждем 15 мс (стр 45)
+	sendhalfbyte(0b00000011);
+	_delay_ms(4);
+	sendhalfbyte(0b00000011);
+	_delay_us(100);
+	sendhalfbyte(0b00000011);
+	_delay_ms(1);
+	sendhalfbyte(0b00000010);
+	_delay_ms(1);
+	sendbyte(0b00101000, 0); //4бит-режим (DL=0) и 2 линии (N=1)
+	_delay_ms(1);
+	sendbyte(0b00001100, 0); //включаем изображение на дисплее (D=1), курсоры никакие не включаем (C=0, B=0)
+	_delay_ms(1);
+	sendbyte(0b00000110, 0); //курсор (хоть он у нас и невидимый) будет двигаться влево
+	_delay_ms(1);
+}
+//----------------------------------------
+void clearlcd(void)
+{
+	sendbyte(0b00000001, 0);
+	_delay_us(1500);
+}
+//----------------------------------------
+void str_lcd (char str1[])
+{
+	wchar_t n;
+	for(n=0;str1[n]!='\0';n++)
+	sendcharlcd(str1[n]);
+}
+
+void ADC_Init(void)
+{
+	ADCSRA |= (1<<ADEN) // Разрешение использования АЦП
+	|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);//Делитель 128 = 64 кГц
+	ADMUX |= (1<<REFS1)|(1<<REFS0); //внешний источник
+}
+//----------------------------------------
+unsigned int ADC_convert (void)
+{
+	switch (ADC_Port) { //переключение входов
+	case 0:
+			ADMUX = (1<<REFS1)|(1<<REFS0)|(0<<MUX1)|(0<<MUX0);
+			ADC_Port = 1;
+			break;
+		case 1:
+			ADMUX = (1<<REFS1)|(1<<REFS0)|(0<<MUX1)|(1<<MUX0);
+			ADC_Port = 2;
+			break;
+		case 2:
+			ADMUX = (1<<REFS1)|(1<<REFS0)|(1<<MUX1)|(0<<MUX0);
+			ADC_Port = 0;
+			break;
+	};
+	ADCSRA |= (1<<ADSC); //Начинаем преобразование
+	while((ADCSRA & (1<<ADSC))); //проверим закончилось ли аналого-цифровое преобразование
+	return (unsigned int) ADC;
+	
+}
+
+//----------------------------------------
+void port_ini(void)
+{
+	PORTD=0x00;
+	DDRD=0xFF;
+}
+//----------------------------------------
+int main(void)
+{
+	unsigned int adc_value;
+	float n;
+	port_ini(); //Инициализируем порты
+	LCD_ini();  //Инициализируем дисплей
+	ADC_Init();//Инициализируем АЦП
+	clearlcd(); //Очистим дисплей
+
+	while(1)
+	{
+		adc_value = ADC_convert(); //Вызовем преобразование
+		setpos(0,0);
+		sendcharlcd(adc_value/1000+0x30);//Преобразуем число в код числа
+		sendcharlcd((adc_value%1000)/100+0x30);//Преобразуем число в код числа
+		sendcharlcd((adc_value%100)/10+0x30);//Преобразуем число в код числа
+		sendcharlcd(adc_value%10+0x30);//Преобразуем число в код числа
+		setpos(8,0);
+		n= (float) adc_value / 400;
+		sendcharlcd((unsigned char) n +0x30);//Преобразуем число в код числа
+		sendcharlcd('.');//Преобразуем число в код числа
+		sendcharlcd(((unsigned char) (n*10))%10 +0x30);//Преобразуем число в код числа
+		sendcharlcd(((unsigned char) (n*100))%10 +0x30);//Преобразуем число в код числа
+		_delay_ms(500);
+	}
+}
